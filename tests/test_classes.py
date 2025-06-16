@@ -1,6 +1,6 @@
 import pytest
 
-from src.classes import Category, Product
+from src.classes import Category, LawnGrass, Product, Smartphone
 
 
 @pytest.fixture(autouse=True)
@@ -217,3 +217,115 @@ def test_product_eq(product_fixt):
         "Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5
     )
     assert product_fixt == same_product
+
+
+@pytest.fixture
+def smartphone_fixture():
+    return Smartphone(
+        name="iPhone 14",
+        description="128GB, Черный цвет",
+        price=150000.0,
+        quantity=10,
+        efficiency=90,
+        model="iPhone 14",
+        memory=128,
+        color="Черный",
+    )
+
+
+@pytest.fixture
+def lawn_grass_fixture():
+    return LawnGrass(
+        name="Зеленая трава",
+        description="Газонная трава для ландшафтного дизайна",
+        price=50.0,
+        quantity=20,
+        country="Нидерланды",
+        germination_period=14,
+        color="Зеленый",
+    )
+
+
+def test_smartphone_init(smartphone_fixture):
+    s = smartphone_fixture
+    assert s.name == "iPhone 14"
+    assert s.description == "128GB, Черный цвет"
+    assert s.price == 150000.0
+    assert s.quantity == 10
+    assert s.efficiency == 90
+    assert s.model == "iPhone 14"
+    assert s.memory == 128
+    assert s.color == "Черный"
+
+
+def test_smartphone_add_same_type(smartphone_fixture):
+    another_phone = Smartphone(
+        name="iPhone 14",
+        description="128GB, Черный цвет",
+        price=150000.0,
+        quantity=5,
+        efficiency=85,
+        model="iPhone 14",
+        memory=128,
+        color="Черный",
+    )
+    total = smartphone_fixture + another_phone
+    expected = (150000.0 * 10) + (150000.0 * 5)
+    assert total == expected
+
+
+def test_smartphone_add_different_type_raises(smartphone_fixture):
+    lawn_grass = LawnGrass(
+        name="Трава",
+        description="Газонная трава",
+        price=50.0,
+        quantity=10,
+        country="Нидерланды",
+        germination_period=14,
+        color="Зеленый",
+    )
+    with pytest.raises(TypeError):
+        _ = smartphone_fixture + lawn_grass
+
+
+def test_lawn_grass_init(lawn_grass_fixture):
+    lg = lawn_grass_fixture
+    assert lg.name == "Зеленая трава"
+    assert lg.description.startswith("Газонная трава")
+    assert lg.price == 50.0
+    assert lg.quantity == 20
+    assert lg.country == "Нидерланды"
+    assert lg.germination_period == 14
+    assert lg.color == "Зеленый"
+
+
+def test_lawn_grass_add_same_type(lawn_grass_fixture):
+    another_lawn = LawnGrass(
+        name="Трава2",
+        description="Еще трава",
+        price=60.0,
+        quantity=15,
+        country="Голландия",
+        germination_period=10,
+        color="Зеленый",
+    )
+    total = lawn_grass_fixture + another_lawn
+    expected = (50.0 * 20) + (60.0 * 15)
+    assert total == expected
+
+
+def test_lawn_grass_add_different_type_raises(lawn_grass_fixture):
+    with pytest.raises(TypeError):
+        _ = lawn_grass_fixture + smartphone_fixture
+
+
+# Также можно проверить str представление для новых классов, если оно реализовано:
+def test_smartphone_str(smartphone_fixture):
+    expected_str = "iPhone 14, 150000.0 руб. Остаток: 10 шт."
+    assert str(smartphone_fixture) == expected_str
+
+
+def test_lawn_grass_str(lawn_grass_fixture):
+    # Предположим, что __str__ LawnGrass не переопределен, тогда он наследует от Product.
+    expected_str = "Зеленая трава, 50.0 руб. Остаток: 20 шт."
+    assert str(lawn_grass_fixture) == expected_str
