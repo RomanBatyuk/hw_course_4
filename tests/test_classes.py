@@ -2,8 +2,7 @@ import unittest
 
 import pytest
 
-from src.classes import (BaseProduct, Category, LawnGrass, Mixin, Product,
-                         Smartphone)
+from src.classes import BaseProduct, Category, LawnGrass, Mixin, Product, Smartphone
 
 
 @pytest.fixture(autouse=True)
@@ -416,3 +415,33 @@ class TestBaseProductAndMixin(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             _ = p1 + 123
+
+
+def test_product_init():
+    with pytest.raises(
+        ValueError, match="Товар с нулевым количеством не может быть добавлен"
+    ):
+        Product("Бракованный товар", "Неверное количество", 1000.0, 0)
+
+
+@pytest.fixture
+def middle_price():
+    return Category("Пустая категория", "Категория без продуктов", [])
+
+
+def test_middle_price(middle_price):
+    assert ZeroDivisionError
+
+
+@pytest.fixture
+def category_with_products():
+    products = [
+        Product("Product1", "desc1", 100.0, 10),
+        Product("Product2", "desc2", 200.0, 5),
+        Product("Product3", "desc3", 300.0, 2),
+    ]
+    return Category("TestCategory", "Test Description", products)
+
+
+def test_middle_price_with_products(category_with_products):
+    assert category_with_products.middle_price() == 200
