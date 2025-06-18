@@ -1,6 +1,9 @@
+import unittest
+
 import pytest
 
-from src.classes import Category, LawnGrass, Product, Smartphone
+from src.classes import (BaseProduct, Category, LawnGrass, Mixin, Product,
+                         Smartphone)
 
 
 @pytest.fixture(autouse=True)
@@ -28,13 +31,13 @@ def test_init_product(product_fixt):
 
 @pytest.fixture
 def product_fixt_2():
-    return Product(1, 1, "Строка", 10)
+    return Product(1, 1, "500", 10)
 
 
 def test_init_product_2(product_fixt_2):
     assert product_fixt_2.name == 1
     assert not isinstance(product_fixt_2.description, str)
-    assert product_fixt_2.price == "Строка"
+    assert product_fixt_2.price == 500
     assert isinstance(product_fixt_2.quantity, int)
 
 
@@ -124,7 +127,7 @@ def category_fixt_5():
                 180000.0,
                 5,
             ),
-            Product(1, 1, "Строка", 10),
+            Product(1, 1, "500", 10),
         ],
     )
 
@@ -172,9 +175,9 @@ def test_product_quantity_update(product_fixt):
 
 def test_category_products_info(category_fixt_2):
     expected_info = (
-        "Prod1, Desc1, 100 руб., Остаток: 1 шт.\n"
-        "Prod2, Desc2, 200 руб., Остаток: 2 шт.\n"
-        "Prod3, Desc3, 300 руб., Остаток: 3 шт."
+        "Prod1, Desc1, 100.0 руб., Остаток: 1 шт.\n"
+        "Prod2, Desc2, 200.0 руб., Остаток: 2 шт.\n"
+        "Prod3, Desc3, 300.0 руб., Остаток: 3 шт."
     )
     assert category_fixt_2.products_info == expected_info
 
@@ -319,13 +322,97 @@ def test_lawn_grass_add_different_type_raises(lawn_grass_fixture):
         _ = lawn_grass_fixture + smartphone_fixture
 
 
-# Также можно проверить str представление для новых классов, если оно реализовано:
 def test_smartphone_str(smartphone_fixture):
     expected_str = "iPhone 14, 150000.0 руб. Остаток: 10 шт."
     assert str(smartphone_fixture) == expected_str
 
 
 def test_lawn_grass_str(lawn_grass_fixture):
-    # Предположим, что __str__ LawnGrass не переопределен, тогда он наследует от Product.
     expected_str = "Зеленая трава, 50.0 руб. Остаток: 20 шт."
     assert str(lawn_grass_fixture) == expected_str
+
+
+class TestBaseProductAndMixin(unittest.TestCase):
+    def test_baseproduct_is_abstract(self):
+        with self.assertRaises(TypeError):
+            _ = BaseProduct()
+
+    def test_baseproduct_abstract_method(self):
+        class Dummy(BaseProduct):
+            def __add__(self, other):
+                return 0
+
+        with self.assertRaises(TypeError):
+            _ = Dummy()
+
+    def test_baseproduct_new_product_implementation(self):
+        class Dummy(BaseProduct):
+            def __add__(self, other):
+                return 0
+
+            @classmethod
+            def new_product(cls, product):
+                return cls()
+
+        product_data = {
+            "name": "name",
+            "description": "desc",
+            "price": "10",
+            "quantity": 1,
+        }
+        instance = Dummy.new_product(product_data)
+        self.assertIsInstance(instance, Dummy)
+
+    def test_mixin_repr(self):
+        class TestClass(Mixin):
+            def __init__(self):
+                self.description = "desc"
+                self.price = 100
+                self.quantity = 5
+                super().__init__()
+
+        obj = TestClass()
+        repr_str = repr(obj)
+        self.assertIn("TestClass", repr_str)
+        self.assertIn("desc", repr_str)
+        self.assertIn("100", repr_str)
+        self.assertIn("5", repr_str)
+
+    def test_product_integration_with_mixin_and_baseproduct(self):
+        product_data = {
+            "name": "TestName",
+            "description": "TestDesc",
+            "price": "200",
+            "quantity": 3,
+        }
+        product = Product.new_product(product_data)
+
+        str_output = str(product)
+        self.assertIn("TestName", str_output)
+        self.assertIn("200.0 руб.", str_output)
+
+        repr_output = repr(product)
+        self.assertIn("Product", repr_output)
+
+        product2 = Product.new_product(product_data)
+        self.assertEqual(product, product2)
+
+    def test_add_method_for_products(self):
+        p1 = Product.new_product(
+            {"name": "A", "description": "desc", "price": "10", "quantity": 2}
+        )
+
+        p2 = Product.new_product(
+            {"name": "B", "description": "desc", "price": "20", "quantity": 3}
+        )
+
+        total_price = p1 + p2
+        self.assertEqual(total_price, 80)
+
+    def test_add_method_type_error(self):
+        p1 = Product.new_product(
+            {"name": "A", "description": "desc", "price": "10", "quantity": 2}
+        )
+
+        with self.assertRaises(TypeError):
+            _ = p1 + 123
